@@ -9,7 +9,6 @@ output:
             toc_float:
               collapsed: false
               smooth_scroll: true
-         
 ---
 
 ```{r setup, include=FALSE}
@@ -20,36 +19,27 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### ¿ Qué es Stacks ?
 
-Stacks es una herramienta bioinformática que sirve para analizar secuencias Rad que permite exportar los resultados
-para hacer análisis posteriores con otras herramientas bioinformáticas. En esta sección trabajaré con una base de datos de secuencias RAD, previamente limpia, para armar loci utilizando el programa `denovo_map.pl` , desde la super computadora [Hydra](https://confluence.si.edu/display/HPC/High+Performance+Computing).
+Stacks es una herramienta bioinformática que sirve para analizar secuencias Rad que permite exportar los resultados para hacer análisis posteriores con otras herramientas bioinformáticas. En esta sección trabajaré con una base de datos de secuencias RAD, previamente limpia, para armar loci utilizando el programa `denovo_map.pl` , desde la super computadora [Hydra](https://confluence.si.edu/display/HPC/High+Performance+Computing).
 
-### Análisis  `Denovo_map.pl` 
- 
- Lo primero que haremos será ir dentro del terminal de linux en Hydra para ubicarnos
- 
+### Análisis `Denovo_map.pl`
 
+Lo primero que haremos será ir dentro del terminal de linux en Hydra para ubicarnos
 
-```
-pwd
-```
+    pwd
+
 Esto sirve para saber donde estamos y luego nos ubicamos donde se encuentra la base de datos para armar el comando.
-
 
 Luego cambiamos la dirección a nuestro espacio en Hydra con el comando `cd` de la siguiente manera:
 
-```
-cd /scratch/genomics/caballeroeg /
-```
+    cd /scratch/genomics/caballeroeg /
 
 Aquí con el comando `mkdir` crearemos un directorio que servirá para guardar los archivos generados por nuestra primera corrida del programa `denovo_map.pl` para encontrar la combinación de parámetros más óptima que nos genere la mayor cantidad de loci que estén presentes en la mayoría de individuos en nuestro sset de datos.
 
-```
-mkdir -p optimization_denovo/m1 optimization_denovo/m2 optimization_denovo/m3 # and so it goes until we reach m9
-```
+    mkdir -p optimization_denovo/m1 optimization_denovo/m2 optimization_denovo/m3 # and so it goes until we reach m9
 
 Crearemos 9 subdirectorios dentro del directorio "padre" optimization_denovo, para que los resultados de las siguientes corridas no se mezclen.
 
-### Optimización de los parámetros. 
+### Optimización de los parámetros.
 
 Stacks contiene tres parámetros principales que controlan la formación e identificación de posbiles loci en la población. Uno de ellos es `-m`, que especifíca el número mínimo de lecturas única (depth of coverage) para cada secuencia que debe cumplir para considerarse una lectura primaria exitosa (y formar un stacks), si no se llega al número mínimo, la secuencia es considera para una lectura secundaria que será procesada después.
 
@@ -59,20 +49,18 @@ Por último, el parámetro `-n` compara cada uno de los loci, de los individuos 
 
 Para escoger la mejor combinación de `-m`, `-M` y `-n` para nuestros datos debemos crear un submuestreo de nuestros datos que denominaremos `popt.txt`. El popt.txt lo cree tomando cinco individuos de cada sitio de muestreo de manera aleatoria cuyo coverage es mayor a 60.00 y lo coloque usando el siguiente formato:
 
-```
-1s02<tab>opt
-2s09F<tab>opt
-2s08<tab>opt
-2s25<tab>opt
-...<tab>opt
-...
-```
+    1s02<tab>opt
+    2s09F<tab>opt
+    2s08<tab>opt
+    2s25<tab>opt
+    ...<tab>opt
+    ...
 
 Es importante usar la tecla `tab` para que el programa reconozca el espacio, de lo contrario no leerá el archivo. Para esta prueba no es necesario especificar el sitio de muestreo y por eso coloque opt.
 
-Una vez definido el popmap (popt.txt), los archivos de stacks  y el directorio donde se guardarán los resultados vamos a ejectuar el comando `denovo_map.pl`,  con el siguiente formato: 
+Una vez definido el popmap (popt.txt), los archivos de stacks y el directorio donde se guardarán los resultados vamos a ejectuar el comando `denovo_map.pl`, con el siguiente formato:
 
-``` /bin/sh 
+``` /bin/sh
 # ----------------Parameters---------------------- #
 #$  -S /bin/sh
 #$ -pe mthread 30
@@ -99,30 +87,30 @@ denovo_map.pl -m 3 -M 8 -N 8 --samples /scratch/genomics/caballeroeg/CPrads/clea
 #
 echo = `date` job $JOB_NAME done
 
-
 ```
+
 En cada corrida de optimización los parámetros a varias son `-M` y `-n` que irán de de uno hasta nueve sucesivamente. Para conocer más detalles acerca del método de optimización puede hacer click [aquí](https://www.biorxiv.org/content/biorxiv/early/2021/11/04/2021.11.02.466953.full.pdf) y visitar el sitio web de [Stacks](https://catchenlab.life.illinois.edu/stacks/comp/denovo_map.php).
 
-Cuando terminen las corridas podemos extraer la cantidad de loci identificados para cada set de parámetros con el siguiente comando: 
+Cuando terminen las corridas podemos extraer la cantidad de loci identificados para cada set de parámetros con el siguiente comando:
 
-```
-$ cat populations.sumstats.tsv | \
- grep -v '^#' | \ # Quita los comentarios
- cut -f 1 | \ # Corta la primera columna (Locus ID)
- sort -n -u | \ # ordena por orden númerico y valores únicos
- wc -l # Cuenta el número de lineas
- 10065
-```
+    $ cat populations.sumstats.tsv | \
+     grep -v '^#' | \ # Quita los comentarios
+     cut -f 1 | \ # Corta la primera columna (Locus ID)
+     sort -n -u | \ # ordena por orden númerico y valores únicos
+     wc -l # Cuenta el número de lineas
+     10065
+
 Por ejemplo para `-M`=1 y `n`=1 la cantidad de loci polimórficos encontrados fue de 10065. Esto lo haremos para cada set de parámetros y los acdomodadres en la siguiente tabla.
+
 ```{r}
 optimization <- read.csv("r_80.csv",sep = ";")
 optimization
 
 ```
 
-Para conocer cual parámetro _denovo_ es el más óptimo para nuestros datos, debemos calcular la diferencias de loci identificados para cada combinación de datos.  Este valor se extrae (change.in._r_80) cálculando la diferencia entre `-M` (por ejemplo, `M2` -`M1`) para conocer cual parámetro nos genera mayor loci. No calculamos el valor de `-M`=1 porque no identifica loci polimórficos. De tal manera quepara calcular, el cambio de loci en `M=2`  `M2` -`M1` da como resultado 461 en la tercera columna. Este valor es el que vamos a utilizar  para saber cual es la combinación más precisa para nuestros datos.
+Para conocer cual parámetro *denovo* es el más óptimo para nuestros datos, debemos calcular la diferencias de loci identificados para cada combinación de datos. Este valor se extrae (change.in.\_r_80) cálculando la diferencia entre `-M` (por ejemplo, `M2` -`M1`) para conocer cual parámetro nos genera mayor loci. No calculamos el valor de `-M`=1 porque no identifica loci polimórficos. De tal manera quepara calcular, el cambio de loci en `M=2` `M2` -`M1` da como resultado 461 en la tercera columna. Este valor es el que vamos a utilizar para saber cual es la combinación más precisa para nuestros datos.
 
-El valor de la diferencia entre `-M`  más cercano a 0 y que sea positivo es el valor que nos dirá cuál parámetro identifica la mayor cantidad de loci polimórficos con cierta flexibilidad, reduciendo el error de colocar loci polimórficos como diferentes loci o viceversa, identificar diferentes loci como un gran loc polifórmico. En nuestro caso el parámetro más óptimo es `M3`.
+El valor de la diferencia entre `-M` más cercano a 0 y que sea positivo es el valor que nos dirá cuál parámetro identifica la mayor cantidad de loci polimórficos con cierta flexibilidad, reduciendo el error de colocar loci polimórficos como diferentes loci o viceversa, identificar diferentes loci como un gran loc polifórmico. En nuestro caso el parámetro más óptimo es `M3`.
 
 ```{r}
 library(ggplot2)
@@ -132,194 +120,421 @@ class(change)
 ggplot(data= optimization, aes(x = optimization$M, y=change, na.rm = T)) + geom_point(color ="steelblue", size = 2) +geom_line() + theme_grey(base_family="mono")+ ggtitle(" Change in loci identified by the M parameter")+ylab("Change in M") + xlab(" M parameter") + theme(plot.title = element_text(hjust = 0.5)) + xlim(0,9)
                     
 ```
-`M1` no está en la grfica porque no hay comparación, por lo que el cambio en la gráfica empieza desde `M2`.
 
+`M1` no está en la grfica porque no hay comparación, por lo que el cambio en la gráfica empieza desde `M2`.
 
 ### Ejecutando el comando `denovo_map.pl`
 
-
 Luego de conocer el parámetro óptimo para nuestros datos procederemos a ejecutar el comnado `denovo_map.pl` con las siguientes especificaciones:
 
+    # /bin/sh                                                                                                         
+    # ----------------Parameters---------------------- #          
+    #$  -S /bin/sh                                                                             
+    #$ -pe mthread 30           
+    #$ -q mThM.q                                                                                                      
+    #$ -l mres=240G,h_data=8G,h_vmem=8G,himem       
+    #$ -cwd                                                                                                           
+    #$ -j y                                                                                                           
+    #$ -N m3p                       
+    #$ -o m3p.log                                                                                                     
+    #$ -m bea                 
+    #$ -M caballeroeg@si.edu
+    #                                                                                                                 
+    # ----------------Modules------------------------- #                                                              
+    module load ~/modulefiles/miniconda                                                                               
+    source activate ste
+    #                                                                                                           
+    # ----------------Your Commands------------------- #     
+    #                                                                                                                          
+    echo + `date` job $JOB_NAME started in $QUEUE with jobID=$JOB_ID on $HOSTNAME                                     
+    echo + NSLOTS = $NSLOTS 
 
-```
-# /bin/sh                                                                                                         
-# ----------------Parameters---------------------- #          
-#$  -S /bin/sh                                                                             
-#$ -pe mthread 30           
-#$ -q mThM.q                                                                                                      
-#$ -l mres=240G,h_data=8G,h_vmem=8G,himem       
-#$ -cwd                                                                                                           
-#$ -j y                                                                                                           
-#$ -N m3p                       
-#$ -o m3p.log                                                                                                     
-#$ -m bea                 
-#$ -M caballeroeg@si.edu
-#                                                                                                                 
-# ----------------Modules------------------------- #                                                              
-module load ~/modulefiles/miniconda                                                                               
-source activate ste
-#                                                                                                           
-# ----------------Your Commands------------------- #     
-#                                                                                                                          
-echo + `date` job $JOB_NAME started in $QUEUE with jobID=$JOB_ID on $HOSTNAME                                     
-echo + NSLOTS = $NSLOTS 
+    denovo_map.pl -m 3 -M 3 -N 3 
+    --samples /scratch/genomics/caballeroeg/CPrads/clean_rads/   #Directorio donde están los archivos stacks
+    --popmap /scratch/genomics/caballer oeg/CPrads/clean_rads/popmp_1.txt  ##population map indicando el individuo y la población
+    -o /scratch/genomics/caballeroeg/CPrads/clean_rads/edgar_analysis/m3p/  #Directorio para guardar 
+    --paired  #Para nuestras lecturas de pares
 
-denovo_map.pl -m 3 -M 3 -N 3 
---samples /scratch/genomics/caballeroeg/CPrads/clean_rads/   #Directorio donde están los archivos stacks
---popmap /scratch/genomics/caballer oeg/CPrads/clean_rads/popmp_1.txt  ##population map indicando el individuo y la población
--o /scratch/genomics/caballeroeg/CPrads/clean_rads/edgar_analysis/m3p/  #Directorio para guardar 
---paired  #Para nuestras lecturas de pares
+    #                                                                                                                          
+    echo = `date` job $JOB_NAME done  
 
-#                                                                                                                          
-echo = `date` job $JOB_NAME done  
-
-```
 En este caso el archivo popmap contiene el siguiente formato:
 
-```
-1s01F<tab>1
-1s01M<tab>1
-1s02<tab>1
-...
+    1s01F<tab>1
+    1s01M<tab>1
+    1s02<tab>1
+    ...
 
-```
 Especificando la población donde pertenece el individuo.
 
 Una vez finalizado el programa `denovo_map.pl` completamente podemos revisar la cantidad de loci identificados, haciendo uso del siguiente comando en la consola.
 
-```
-cat gstacks.log | grep -B 2 -A 3 '^Genotyped'
+    cat gstacks.log | grep -B 2 -A 3 '^Genotyped'
 
-```
 El cual imprime la cantidad de loci identificados :
 
-```
-Genotyped 93683 loci:
-  effective per-sample coverage: mean=49.4x, stdev=28.4x, min=4.5x, max=188.2x                                             
-  mean number of sites per locus: 465.0                                                                                    
-   a consistent phasing was found for 756770 of out 999308 (75.7%) diploid loci needing phasing    
+    Genotyped 93683 loci:
+      effective per-sample coverage: mean=49.4x, stdev=28.4x, min=4.5x, max=188.2x                                             
+      mean number of sites per locus: 465.0                                                                                    
+       a consistent phasing was found for 756770 of out 999308 (75.7%) diploid loci needing phasing    
 
-```
+También podemos obervar a nivel de individuos cuales muestras, tienen un coverage bajo (10x\>) y que deberíamos descartar para los análisis siguientes ya que nos pueden generar ruido y desviaciones en nuestra data. Entonces bajo el siguiente comando
 
-También podemos obervar a nivel de individuos cuales muestras, tienen un coverage bajo (10x>) y que deberíamos descartar para los análisis siguientes  ya que nos pueden generar ruido y desviaciones en nuestra data. Entonces bajo el siguiente comando
+     stacks-dist-extract gstacks.log.distribs effective_coverages_per_sample \
+     | grep -v '^#' \
+     | cut -f 1-2,4-5,8
 
-```
- stacks-dist-extract gstacks.log.distribs effective_coverages_per_sample \
- | grep -v '^#' \
- | cut -f 1-2,4-5,8
+    # For mean_cov_ns, the coverage at each locus is weighted by the number of                                                 
+    # samples present at that locus (i.e. coverage at shared loci counts more).                                                
+    sample  n_loci  n_used_fw_reads mean_cov        mean_cov_ns                                                                
+    1s01F   15217   600125  39.438  42.716                                                                                     
+    1s01M   28001   3383027 120.818 167.263                                                                                    
+    1s02    15521   568731  36.643  40.246                                                                                     
+    1s03    17532   734543  41.897  48.854                                                                                     
+    1s04    16607   1120518 67.473  75.308                                                                                     
+    1s05    17848   796382  44.620  52.041                                                                                     
+    1s06    17807   938246  52.690  60.962    
 
-# For mean_cov_ns, the coverage at each locus is weighted by the number of                                                 
-# samples present at that locus (i.e. coverage at shared loci counts more).                                                
-sample  n_loci  n_used_fw_reads mean_cov        mean_cov_ns                                                                
-1s01F   15217   600125  39.438  42.716                                                                                     
-1s01M   28001   3383027 120.818 167.263                                                                                    
-1s02    15521   568731  36.643  40.246                                                                                     
-1s03    17532   734543  41.897  48.854                                                                                     
-1s04    16607   1120518 67.473  75.308                                                                                     
-1s05    17848   796382  44.620  52.041                                                                                     
-1s06    17807   938246  52.690  60.962    
+En en shell podemos convertir el arhivo en un txt de la siguiente manera:
 
-```
- En  en shell podemos convertir el arhivo en un txt de la siguiente manera:
-```
-stacks-dist-extract gstacks.log.distribs effective_coverages_per_sample | grep -v '^#' | cut -f 1-2,4-5,8 > raw_cov.txt
-```
+    stacks-dist-extract gstacks.log.distribs effective_coverages_per_sample | grep -v '^#' | cut -f 1-2,4-5,8 > raw_cov.txt
+
 Desde el servidor Hydra exportamos este archivo y lo podemos guardar a nuestro ordenador cargndo el siguiente módulo que nos llevará al siguiente [enlace](https://send.vis.ee) para descargar nuestro archivo :
 
-```
-module load tools/ffsend
-ffupload raw_cov.txt
-https://send.vis.ee/download/d0099f8000924544/#hYKJOtgtz0d1sMyXrhOLgw   
+    module load tools/ffsend
+    ffupload raw_cov.txt
+    https://send.vis.ee/download/d0099f8000924544/#hYKJOtgtz0d1sMyXrhOLgw   
 
-```
-
-Luego, podemos editar el archivo `raw_cov.txt` desde un editor de texto como [Visual Studio Code](https://code.visualstudio.com), [Notepad++](https://notepad-plus-plus.org/downloads/) o el de su preferencia dependiendo de sus gustos, o sistema operativo. No es recomendable usar el bloc de notar o Microsoft Word.
-
+Luego, podemos editar el archivo `raw_cov.txt` desde un editor de texto como [Visual Studio Code](https://code.visualstudio.com), [Notepad++](https://notepad-plus-plus.org/downloads/) o el de su preferencia dependiendo de sus gustos, o sistema operativo. No es recomendable usar el bloc de notas o Microsoft Word.
 
 En el editor de texto, abrimos el archivo :
 
-```{r}}
+``` {r}}
 sample|depth of|max  |reads  | %reads
       |cov     |cov  |incorpo| incor
 ------|--------|-----|-------|-----
-3Bx42 |	19.37  |278  |375366 |  77.0
+3Bx42 | 19.37  |278  |375366 |  77.0
 3S36  | 14.43  |256  |265521 |  73.3
-3S38H |	5.58   |118  |15367	 |  38.5
-3S39M |	6.32   |181  |77588	 |  68.1
-
+3S38H | 5.58   |118  |15367  |  38.5
+3S39M | 6.32   |181  |77588  |  68.1
 ```
- En la segunda columna están los depth of coverages que nos interesan. Aquellos individuos que tengan un depth of coverage menor a 10x (como la muestras 3s338H) serán descartados para el próximo análisis, el cual es el comando 
- `populations` que nos servirá para otros programas bioinformáticos.
- 
- 
+
+En la segunda columna están los depth of coverages que nos interesan. Aquellos individuos que tengan un depth of coverage menor a 10x (como la muestras 3s338H) serán descartados para el próximo análisis, el cual es el comando `populations` que nos servirá para otros programas bioinformáticos.
+
 ### Populations software
 
-El programa [`populations`](https://catchenlab.life.illinois.edu/stacks/comp/populations.php) analizará los individuos dentro de las poblaciones y calculará varios estadísticos asociados como FST, FIS, también calculará la frecuencia asociada a la heterocigosidad esperada, heterocigosidad observada y en diferentes formatos como  [STRUCTURE](https://web.stanford.edu/group/pritchardlab/structure.html), [plink](https://www.cog-genomics.org/plink/1.9/formats), [genepop](https://www.cog-genomics.org/plink/1.9/formats) por mencionar algunos. 
+El programa [`populations`](https://catchenlab.life.illinois.edu/stacks/comp/populations.php) analizará los individuos dentro de las poblaciones y calculará varios estadísticos asociados como FST, FIS, también calculará la frecuencia asociada a la heterocigosidad esperada, heterocigosidad observada y en diferentes formatos como [STRUCTURE](https://web.stanford.edu/group/pritchardlab/structure.html), [plink](https://www.cog-genomics.org/plink/1.9/formats), [genepop](https://www.cog-genomics.org/plink/1.9/formats) por mencionar algunos.
+
+    # /bin/sh                                                                                                                  
+    # ----------------Parameters---------------------- #                                                                       
+    #$  -S /bin/sh                                                                                                             
+    #$ -pe mthread 30                                                                                                          
+    #$ -q mThM.q                                                                                                               
+    #$ -l mres=240G,h_data=8G,h_vmem=8G,himem                                                                                  
+    #$ -cwd                                                                                                                    
+    #$ -j y                                                                                                                    
+    #$ -N paired_populations                                                                                                   
+    #$ -o paired_populations.log                                                                                               
+    #$ -m bea                                                                                                                  
+    #$ -M caballeroeg@si.edu                                                                                                   
+    #                                                                                                                          
+    # ----------------Modules------------------------- #                                                                       
+    module load ~/modulefiles/miniconda                                                                                        
+    source activate ste                                                                                                        
+    #                                                                                                                          
+    # ----------------Your Commands------------------- #                                                                       
+    #                                                                                                                          
+    echo + `date` job $JOB_NAME started in $QUEUE with jobID=$JOB_ID on $HOSTNAME                                              
+    echo + NSLOTS = $NSLOTS                                                                                                    
+    #                                                                                                                          
+    populations -P /scratch/genomics/caballeroeg/CPrads/clean_rads/edgar_analysis/m3p 
+    -M /scratch/genomics/caballeroeg/populations_ana/paired_populations/paired_popmap.txt 
+    -O /scratch/genomics/caballeroeg/populations_ana/paired_populations 
+    -p 3 
+    -r 0.50 
+    --fstats 
+    --vcf 
+    --genepop 
+    --structure 
+    --treemix 
+    --hwe
+    #                                                                                                                          
+    echo = `date` job $JOB_NAME done
+
+El comando que se presenta a continuación es un modelo de como funciona el programa y se puede adaptar para cada análisis posterior. hay dos parámetros que son pertinentes explicar `-p` indica el número mínimo que tiene que estar presente un locus para procesarlo en el análisis y el parámetro `-r` que indica el procentaje mínimo de individuos en una población para procesar un locus para esa población.
+
+Para ver los resultados del populations ejecutamos el siguiente comando:
+
+    Removed 78826 loci that did not pass sample/population constraints from 93683 loci.
+    Kept 14857 loci, composed of 10149843 sites; 86404 of those sites were filtered, 412383 variant sites remained.            
+    Number of loci with PE contig: 14857.00 (100.0%);                                                                          
+      Mean length of loci: 673.17bp (stderr 0.60);                                                                             
+    Number of loci with SE/PE overlap: 14856.00 (100.0%);
+
+En este caso el número de loci presentes son 14857.
+
+## STRUCTURE /Faststructure
+
+[Structure](https://web.stanford.edu/group/pritchardlab/structure.html) es un programa de libre acceso para analizar datos genotípicos e investigar la estructura genética de una población.  Sirve para identificar "clusters" o grupos genotípicos en un set de datos asignados, a través de un algoritmo basado en el [equilibrio Hardy-Vweinberg](http://bioinformatica.uab.es/base/base3.asp?sitio=geneticapoblaciones&anar=concep&item=Hardy-Weinberg). [Faststructure](https://rajanil.github.io/fastStructure/) es un algoritmo similar al de STRUCTURE diseñado para identificar la estructura genotípica poblacional con datos basados en polimorfismos de un solo nucleótido (SNP, por sus siglas en inglés).
+
+El programa asigna a cada individuo de la población (referido como genotipo y que se encuentra en la columna ) una probabilidad estadística asociada al grupo que pertenece el individuo de acuerdo a la cantidad de grupos genotípicos que sospechamos que podrían haber,
+
+### Ejecutando populations software para análisis en STRUCTURE o Faststructure.
+
+Primero, debemos ejecutar el comando llamar al programa
 
 ```
-# /bin/sh                                                                                                                  
-# ----------------Parameters---------------------- #                                                                       
-#$  -S /bin/sh                                                                                                             
-#$ -pe mthread 30                                                                                                          
-#$ -q mThM.q                                                                                                               
-#$ -l mres=240G,h_data=8G,h_vmem=8G,himem                                                                                  
-#$ -cwd                                                                                                                    
-#$ -j y                                                                                                                    
-#$ -N paired_populations                                                                                                   
-#$ -o paired_populations.log                                                                                               
-#$ -m bea                                                                                                                  
-#$ -M caballeroeg@si.edu                                                                                                   
-#                                                                                                                          
-# ----------------Modules------------------------- #                                                                       
-module load ~/modulefiles/miniconda                                                                                        
-source activate ste                                                                                                        
-#                                                                                                                          
-# ----------------Your Commands------------------- #                                                                       
-#                                                                                                                          
-echo + `date` job $JOB_NAME started in $QUEUE with jobID=$JOB_ID on $HOSTNAME                                              
-echo + NSLOTS = $NSLOTS                                                                                                    
-#                                                                                                                          
+# /bin/sh                                                                                                        
+# ----------------Parameters---------------------- #                                                              
+#$  -S /bin/sh                                                                                                    
+#$ -pe mthread 30                                                                                                 
+#$ -q mThM.q                                                                                                      
+#$ -l mres=240G,h_data=8G,h_vmem=8G,himem                                                                         
+#$ -cwd                                                                                                       
+#$ -j y                                                                                                        
+#$ -N random_snps_population                                                                                   
+#$ -o random_snps_population.log                                                                                  
+#$ -m bea                                                                                                         
+#$ -M caballeroeg@si.edu                                                                                        
+#                                                                                                                 
+# ----------------Modules------------------------- #                                                            
+module load ~/modulefiles/miniconda                                                                               
+source activate ste                                                                                               
+#                                                                                                                 
+# ----------------Your Commands------------------- #                                                            
+#                                                                                                              
+echo + `date` job $JOB_NAME started in $QUEUE with jobID=$JOB_ID on $HOSTNAME                                   
+echo + NSLOTS = $NSLOTS                                                                                           
+#                                                                                                                 
 populations -P /scratch/genomics/caballeroeg/CPrads/clean_rads/edgar_analysis/m3p 
 -M /scratch/genomics/caballeroeg/populations_ana/paired_populations/paired_popmap.txt 
--O /scratch/genomics/caballeroeg/populations_ana/paired_populations 
--p 3 
--r 0.50 
+-O /scratch/genomics/caballeroeg/populations_ana/random_snps_population 
+-p 3 -
+r 0.50 
 --fstats 
 --vcf 
 --genepop 
 --structure 
 --treemix 
---hwe
+--hwe 
+--write-random-snp
 #                                                                                                                          
-echo = `date` job $JOB_NAME done
+echo = `date` job $JOB_NAME done   
 
 ```
-El comando que se presenta a continuación es un modelo de como funciona el programa y se puede adaptar para cada análisis posterior. hay dos parámetros que son pertinentes explicar `-p` indica el número mínimo que tiene que estar presente un locus para procesarlo en el análisis y el parámetro `-r` que indica el procentaje mínimo de individuos en una población para procesar un locus para esa población.
+En nuestro  `jobfile` las especificaciones son similares al `populations` anterior, esta vez habilitamos la opción
+`fstats` que calcula estadísticos F. la opción `hwe` evalúa los loci que están en equilibrio Hardy-Weinberg, la opción `write-random-snp` es para seleccionar al azar un snp por cada locus, de igual manera podemos seleccionar el primer snp de cada locus con la opción `write-single-snp`. Finalmente las opciones `vcf`, `genepop`,`structure` y `treemix` exportan los resultados en los formatos correspondientes. Para nuestros análisis usaremos el archivo en formato `structure`.
 
-Para ver los resultados del populations ejecutamos el siguiente comando:
+Antes de ejecutar Fasstructure a este archivo debemos modificarlo, para ello lo descargamos y podemos editarlo con [R](https://www.r-project.org), o [Microsft Excel](https://www.microsoft.com/es-es/microsoft-365/excel).
 
-```
-Removed 78826 loci that did not pass sample/population constraints from 93683 loci.
-Kept 14857 loci, composed of 10149843 sites; 86404 of those sites were filtered, 412383 variant sites remained.            
-Number of loci with PE contig: 14857.00 (100.0%);                                                                          
-  Mean length of loci: 673.17bp (stderr 0.60);                                                                             
-Number of loci with SE/PE overlap: 14856.00 (100.0%);
+```{r}
+raw_pop <- read.delim('Estructure_data.txt')
+raw_pop[1:8,1:8]
 
 ```
 
-En este caso el número de loci presentes son 14857.
+La estructura del archivo populations es la siguiente :
 
+* Columna 1: Identificación de la muestra.
 
+* Columna 2: Población de origen de la muestra.
 
+* Columna 3-n: Datos de "SNPs"
 
+Debemos  modificar ligeramente nuestros datos ya que las columnas 1-6 en faststructure, son metadatos y no incluyen la data de los SNPS. Con excel o R (donde te sientas más cómodo), agregaremos cuatro columnas del símbolo
+'#', para que a partir de la columna 7 los datos de SNPS sean leídos corrrectamente. Para STRUCTURE pero para Faststructure no estoy seguro, es una buena práctica reemplazar los 0 con -9, para representar los datos en blanco o 'missing data' y eliminar los enbaezados de tal manera que la fila 1 sea del individuo 1. Como verán cada individuo ocupa dos filas y el programa solo acepta análisis diploides. Cabe destacar que el formato de este archivo debe ser **str** 
 
+Nuestro archivo modificado debe quedar así:
 
-## Including Plots
+```{r}
+modi <- read.delim('structure_modified.txt')
+modi[1:8,1:12]
 
-You can also embed plots, for example:
+```
+Luego podemos aplicar el programa fasstructure, el cual tiene los siguientes argumentos :
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```
+Uso: python structure.py
+     -K <int>    número de poblaciones asumidas
+     --input=<file>   (/ruta/hacia/archivo /de/formato/'achivo.str') #sin comillas
+     --output=<file>   (/ruta/hacia/resultados/del/programa)
+     --tol=<float>   (criterio de convergencia; por defecto: 10e-6)
+     --prior={simple,logistic}   (elección por defecto: simple)
+     --cv=<int>   (números de validaciones cruzadas efectuadas en cada prueba, 0 implica sin validación cruzada; por defecto: 0)
+     --format={bed,str} (formato del archivo de entrada del; por defecto es: bed. En nuestro caso 'str')
+     --full   (Desplegar todos los parámetros variables; opcional)
+     --seed=<int>   (especificar manualmente   el número de la semilla aleatorio, optional)
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Esto fue traducido de la página de [vdreis](https://vdreis.com/faststructure/), el cual describe como transformar los datos par faststucture, a su vez del [sitio web oficial de fastructure](https://rajanil.github.io/fastStructure/). 
+
+
+En nuestro caso me interesa saber cuál es la estructura genómica de mi población, con 5 sitios de muestreo distintos. En este caso haré 10 pruebas con la opción `K` de 1 a 10. Correré 10 pruebas seguidas y luego las compararé con el programa `ChooseK.py` que permite conocer cuál grupo es la mejor estructura genómica del grupo.
+
+
+```
+# /bin/sh                                                                                                         
+# ----------------Parameters---------------------- #
+#$ -S /bin/sh                                                                                                   
+#$ -pe mthread 30                                                                                                 
+#$ -q mThM.q                                                                                                      
+#$ -l mres=240G,h_data=8G,h_vmem=8G,himem                   
+#$ -cwd                                                                                                         
+#$ -j y                                                                                                           
+#$ -N k1                                                                                                          
+#$ -o K_$TASK_ID.log                                                                                              
+#$ -t 1-10                                                                                                        
+#$ -m bea                                                                                                
+#$ -M caballeroeg@si.edu  
+# ----------------Modules------------------------- #                                                              
+module load bio/faststructure/1.0                                                                                 
+#                                                                                                               
+# ----------------Your Commands------------------- #                                                              
+#                                                                                                                 
+echo + `date` job $JOB_NAME started in $QUEUE with jobID=$JOB_ID on $HOSTNAME                                              
+
+echo + NSLOTS = $NSLOTS                                                                                                    
+structure.py -K $SGE_TASK_ID
+--input=/scratch/genomics/caballeroeg/FasSTRUCTURE/population
+--output=/scratch/genomics/caballeroeg/FasSTRUCTURE/K 
+--prior=simple 
+--format=str 
+--full 
+--tol=10e-6 
+
+```
+
+De esta manera tenemos los archivos agrupados en un mismo directorio y ahora vamos a conocer el mejor modelo para nuestros datos:
+
+```
+# ----------------Parameters---------------------- #                                                              
+#$ -S /bin/sh                                                                                                     
+#$ -pe mthread 30                                                                             
+#$ -q mThM.q                                                                                                      
+#$ -l mres=240G,h_data=8G,h_vmem=8G,himem 
+#$ -cwd                                                                                                           
+#$ -j y                                                                                                           
+#$ -N best                                                              
+#$ -o best_k.log  
+#$ -m bea                                                                                                         
+#$ -M caballeroeg@si.edu
+# 
+# ----------------Modules------------------------- #          
+module load bio/faststructure/1.0
+#                                                                                                                 
+# ----------------Your Commands------------------- #                                                              
+#                                                                                                                          
+echo + `date` job $JOB_NAME started in $QUEUE with jobID=$JOB_ID on $HOSTNAME                                              
+echo + NSLOTS = $NSLOTS                                                                                           
+chooseK.py --input=/scratch/genomics/caballeroeg/FasSTRUCTURE/K_                                                  
+```
+
+Y nuestro resultado es el siguiente.
+
+```
+Model complexity that maximizes marginal likelihood = 1                                                                    
+Model components used to explain structure in data = 1 
+
+```
+ Para nuestra figura generada podemos usar otro algoritmo que nos permite visualizar los datos y entender la distribución genómica poblacional a través del siguiente comando :
+ 
+```
+# ----------------Parameters---------------------- #                                                              
+#$ -S /bin/sh                                                                                                     
+#$ -pe mthread 30                                                                             
+#$ -q mThM.q                                                                                                      
+#$ -l mres=240G,h_data=8G,h_vmem=8G,himem 
+#$ -cwd                                                                                                           
+#$ -j y                                                                                                           
+#$ -N best                                                              
+#$ -o best_k.log  
+#$ -m bea                                                                                                         
+#$ -M caballeroeg@si.edu
+# 
+# ----------------Modules------------------------- #          
+module load bio/faststructure/1.0
+#                                                                                                                 
+# ----------------Your Commands------------------- #   
+
+#                                                                                                                          
+echo + `date` job $JOB_NAME started in $QUEUE with jobID=$JOB_ID on $HOSTNAME                                              
+echo + NSLOTS = $NSLOTS  
+
+distruct.py \          
+-K $SGE_TASK_ID \                                                                                                 
+--input=/scratch/genomics/caballeroeg/FasSTRUCTURE/k$SGE_TASK_ID/K_$SGE_TASK_ID \                                 
+--output=/scratch/genomics/caballeroeg/FasSTRUCTURE/K$SGE_TASK_ID \                                               
+--popfile=/scratch/genomics/caballeroeg/FasSTRUCTURE/popfile.txt                                                  
+--title=K-means $SGE_TASK_ID  
+```
+ 
+ Estas figuras también se pueden gráficar con R 
+ 
+```{r}
+setwd('C:/Users/edgar/OneDrive/Documentos/Bioinformática/Structure/FASSTRUCTURE/meanQ_data')
+tbl = read.table("K_10.10.meanQ")
+barplot(t(as.matrix(tbl)), col=rainbow(3),
+  xlab="Individual", ylab="Ancestry", border=NA,main="K=10")
+
+```
+ 
+Como podemos observar para K= 10 no existen 10 grupos diferenciables. Esto es porque el algoritmo detecta un gran grupo genotípico y no existen diferencias a nivel de genoma entre los 5 grupos de muestreos.
+
+
+En el siguiente apartado veremos como hacer lo mismo con Admixture.
+
+\pagebreak
+
+
+
+
+## Admixture
+
+[Admixture](https://dalexander.github.io/admixture/) es una alternativa similar a faststructure y una alrernativa para usar este software en caso de presentar dificultades con faststructure o STRUCTURE o para corroborar resultados. Para saber más sobre la documentación de [Admixture haga click aquí.](http://dalexander.github.io/admixture/admixture-manual.pdf)
+
+
+```
+# ----------------Parameters---------------------- #                                                              
+#$ -S /bin/sh                                                                                                     
+#$ -pe mthread 30                                                                             
+#$ -q mThM.q                                                                                                      
+#$ -l mres=240G,h_data=8G,h_vmem=8G,himem 
+#$ -cwd                                                                                                           
+#$ -j y                                                                                                           
+#$ -N best                                                              
+#$ -o best_k.log  
+#$ -m bea                                                                                                         
+#$ -M caballeroeg@si.edu
+# 
+# ----------------Modules------------------------- #          
+module load bio/faststructure/1.0
+#                                                                                                                 
+# ----------------Your Commands------------------- #   
+
+#                                                                                                                    
+echo + `date` job $JOB_NAME started in $QUEUE with jobID=$JOB_ID on $HOSTNAME                                              
+echo + NSLOTS = $NSLOTS
+
+admixture --cv /scratch/genomics/caballeroeg/post-STACKS/admixture/population_plink.ped $SGE_TASK_ID > log$SGE_TASK_ID.out 
+
+```
+Este archivo lo podemos interpretar de la siguiente manera, entre más bajo el valor de cv para cada K, es más probable que ese sea la cantidad de grupos genotípicos en nuestra población o set de datos.
+
+```{r}
+cv<- read.delim('cross_validation.txt')
+cv
+```
+Podemos observar que el valor más bajo es para `K`=1, el cual coincide con el valor obtenido por faststructure.
+
+```{r}
+
+library(ggplot2)
+ggplot(data = cv,aes(cv$K,cv$CV.Error)) + geom_point() + geom_line(color='aquamarine1') + ggtitle('Cross validation') + theme_classic() + theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+
+
+
+
