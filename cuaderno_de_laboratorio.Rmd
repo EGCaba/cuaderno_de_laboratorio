@@ -472,11 +472,10 @@ distruct.py \
  Estas figuras también se pueden gráficar con R 
  
 ```{r}
-setwd('C:/Users/edgar/OneDrive/Documentos/Bioinformática/Structure/FASSTRUCTURE/meanQ_data')
+setwd("C:/Users/edgar/OneDrive/Documentos/Bioinformática/Structure/FASSTRUCTURE/meanQ_data")
 tbl = read.table("K_10.10.meanQ")
 barplot(t(as.matrix(tbl)), col=rainbow(3),
   xlab="Individual", ylab="Ancestry", border=NA,main="K=10")
-
 ```
  
 Como podemos observar para K= 10 no existen 10 grupos diferenciables. Esto es porque el algoritmo detecta un gran grupo genotípico y no existen diferencias a nivel de genoma entre los 5 grupos de muestreos.
@@ -528,10 +527,261 @@ cv
 Podemos observar que el valor más bajo es para `K`=1, el cual coincide con el valor obtenido por faststructure.
 
 ```{r}
-
+library(ggrepel)
 library(ggplot2)
-ggplot(data = cv,aes(cv$K,cv$CV.Error)) + geom_point() + geom_line(color='aquamarine1') + ggtitle('Cross validation') + theme_classic() + theme(plot.title = element_text(hjust = 0.5))
+ggplot(data = cv,aes(cv$K,cv$CV.Error)) + geom_point() + geom_line(color='aquamarine1') + ggtitle('Cross validation') + theme_classic() + theme(plot.title = element_text(hjust = 0.5)) + geom_text_repel(aes(label= cv$K))+ xlab("K") + ylab("Cross validation error")
+
 ```
+Loading required libraries
+
+```{r}
+library(readr)
+library(ggplot2)
+
+```
+
+Loading the libraries
+
+```{r}
+getwd()
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+```
+
+Reading the `.tsv` files
+
+```{r}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+ps1 <- read_tsv("populations.fst_1-2.tsv")
+ps1
+
+```
+
+Adding a column with fakes bp to prevent locus to merge
+
+```{r}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+ps1$bpfake <- 1:nrow(ps1)
+ps1
+```
+
+plotting the FST vs fake-bp for the comparison bettween population 1 and popuation 2
+
+```{r fst_2s_3b_plot}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+attach(ps1) #Attach the names of the columns without typing the dataframe using the "$"
+names(ps1[12]) -> AMOVA_FST
+ps1
+fst_2s_3b<-ggplot(data= ps1) + geom_point(aes(x= bpfake, y= `AMOVA Fst`)) +theme_classic() + ggtitle("2S27 vs 3B52") + xlab("") + theme(plot.title = element_text(hjust = 0.5))
+fst_2s_3b
+
+
+```
+
+Checking outliers and max values to contrast the plots max `Fst`
+
+```{r}
+max(`AMOVA Fst`)
+```
+
+## Comparison 2 2S28 vs 3s92
+
+```{r}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+ps2 <- read_tsv("populations.fst_1-3.tsv")
+ps2
+```
+
+Adding the fake columns
+
+```{r }
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+ps2$bpfake <- 1:nrow(ps2)
+ps2
+
+```
+
+plotting the `FST` values
+
+```{r fst_2s_3s}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+attach(ps2) #Attach the names of the columns without typing the dataframe using the "$"
+
+attach(ps2) #Attach the names of the columns without typing the dataframe using the "$"
+names(ps2[12]) -> AMOVA_FST
+ps2
+fst_2s_3s <- ggplot(data = ps2) + geom_point(aes(x= bpfake, y= `AMOVA Fst`)) + theme_classic() + ggtitle("2S27 vs 3s92") + xlab("") + theme(plot.title = element_text(hjust = 0.5))
+
+fst_2s_3s
+
+```
+
+##Comparison 3 2s27 vs 42s28
+
+Here is the code
+
+```{r fst_2s_4s}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+ps3 <- read_tsv("populations.fst_1-4.tsv") #calling the file
+ps3
+
+ps3$bpfake <- 1:nrow(ps3)  #adding the fake bp
+ps3
+
+attach(ps3) #Attach the names of the columns without typing the dataframe using the "$"
+
+
+fst_2s_4s <- ggplot(data = ps3) + geom_point(aes(x= bpfake, y= `AMOVA Fst`)) + theme_classic() + ggtitle(" 2S27 vs  4s92") + xlab("") + theme(plot.title = element_text(hjust = 0.5))
+fst_2s_4s
+
+
+
+
+```
+
+## Comparison 4 2s27 vs 42b8
+
+```{r fst_2s_4b}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+ps4 <- read_tsv("populations.fst_1-5.tsv") #calling the file
+ps4
+
+ps4$bpfake <- 1:nrow(ps4)  #adding the fake bp
+ps4
+
+attach(ps3) #Attach the names of the columns without typing the dataframe using the "$"
+
+
+fst_2s_4b <- ggplot(data = ps4) + geom_point(aes(x= bpfake, y= `AMOVA Fst`)) + theme_classic() + ggtitle("2S27 vs  42b8") + xlab("") + theme(plot.title = element_text(hjust = 0.5))
+fst_2s_4b
+
+
+
+```
+
+## comparison 5 3b52 vs 3s92
+
+```{r fst_3b_3s}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+ps5 <- read_tsv("populations.fst_2-3.tsv") #calling the file
+ps5
+
+ps5$bpfake <- 1:nrow(ps5)  #adding the fake bp
+ps5
+
+attach(ps5) #Attach the names of the columns without typing the dataframe using the "$"
+
+
+fst_3b_3s <- ggplot(data = ps5) + geom_point(aes(x= bpfake, y= `AMOVA Fst`)) + theme_classic() + ggtitle("3b52 vs  3s92") + xlab("") + theme(plot.title = element_text(hjust = 0.5))
+fst_3b_3s
+
+```
+
+##Comparison 6 3b52 vs 42s28
+
+```{r fst_3b_4s}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+ps6 <- read_tsv("populations.fst_2-4.tsv") #calling the file
+ps6
+
+ps6$bpfake <- 1:nrow(ps6)  #adding the fake bp
+ps6
+
+attach(ps6) #Attach the names of the columns without typing the dataframe using the "$"
+
+
+fst_3b_4s <- ggplot(data = ps6) + geom_point(aes(x= bpfake, y= `AMOVA Fst`)) + theme_classic() + ggtitle("3b52 vs  42s28") + xlab("") + theme(plot.title = element_text(hjust = 0.5))
+fst_3b_4s
+
+
+```
+
+##Comparison 7 3b52 vs 42b8
+
+```{r fst_3b_4b}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+ps7 <- read_tsv("populations.fst_2-5.tsv") #calling the file
+ps7
+
+ps7$bpfake <- 1:nrow(ps7)  #adding the fake bp
+ps7
+
+attach(ps7) #Attach the names of the columns without typing the dataframe using the "$"
+
+
+fst_3b_4b <- ggplot(data = ps7) + geom_point(aes(x= bpfake, y= `AMOVA Fst`)) + theme_classic() + ggtitle("3b52 vs  42b8") + xlab("") + theme(plot.title = element_text(hjust = 0.5))
+fst_3b_4b
+
+
+```
+
+## Comparison 8 3s92 vs 42s28
+
+```{r fst_3s_4s}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+ps8 <- read_tsv("populations.fst_3-4.tsv") #calling the file
+ps8
+
+ps8$bpfake <- 1:nrow(ps8)  #adding the fake bp
+ps8
+
+attach(ps8) #Attach the names of the columns without typing the dataframe using the "$"
+
+
+fst_3s_4s <- ggplot(data = ps8) + geom_point(aes(x= bpfake, y= `AMOVA Fst`)) + theme_classic() + ggtitle("3S92 and  42s28") + xlab("") + theme(plot.title = element_text(hjust = 0.5))
+
+fst_3s_4s
+```
+
+##comparison 9 3s92 vs 42b8
+
+```{r fst_3s_4b}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+ps9 <- read_tsv("populations.fst_3-5.tsv") #calling the file
+ps9
+
+ps9$bpfake <- 1:nrow(ps9)  #adding the fake bp
+ps9
+
+attach(ps9) #Attach the names of the columns without typing the dataframe using the "$"
+
+
+fst_3s_4b <- ggplot(data = ps3) + geom_point(aes(x= bpfake, y= `AMOVA Fst`)) + theme_classic() + ggtitle("3s92 and  42b8") + xlab("") + theme(plot.title = element_text(hjust = 0.5))
+fst_3s_4b
+
+```
+
+## Comparison 10 42s28 vs 42b8
+
+```{r fst_4s_4b}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+ps10 <- read_tsv("populations.fst_4-5.tsv") #calling the file
+ps10
+
+ps10$bpfake <- 1:nrow(ps10)  #adding the fake bp
+ps10
+
+attach(ps10) #Attach the names of the columns without typing the dataframe using the "$"
+
+
+fst_4s_4b <- ggplot(data = ps10) + geom_point(aes(x= bpfake, y= `AMOVA Fst`)) + theme_classic() + ggtitle("42s28 and  42b8") + xlab("") + theme(plot.title = element_text(hjust = 0.5))
+fst_4s_4b
+
+```
+
+## Figures arrange
+
+### FST comparison based on phenotyoe (Host: Solanum ursinum)
+
+```{r}
+setwd("C:/Users/edgar/OneDrive/Documentos/R/DPCA_Alchisme_grossa/FST")
+library(ggplot2)
+library(ggpubr)
+ggarrange(fst_3b_3s,fst_4s_4b,fst_2s_3s,fst_2s_4s,fst_3s_4s,fst_3s_4b,fst_3b_4s,fst_2s_3b,fst_2s_4s, ncol= 1, nrow = 2)
+```
+
+
+
+
 
 
 
