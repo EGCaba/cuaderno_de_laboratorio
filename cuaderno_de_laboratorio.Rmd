@@ -4,6 +4,7 @@ author: "Edgar Caballero"
 date: "`r Sys.Date()`"
 output: 
   html_document:
+            keep_md: yes
             toc: true
             toc_depth: 5
             toc_float:
@@ -209,7 +210,7 @@ Luego, podemos editar el archivo `raw_cov.txt` desde un editor de texto como [Vi
 
 En el editor de texto, abrimos el archivo :
 
-``` {r}}
+```
 sample|depth of|max  |reads  | %reads
       |cov     |cov  |incorpo| incor
 ------|--------|-----|-------|-----
@@ -473,28 +474,68 @@ distruct.py \
  
 ```{r}
 setwd("C:/Users/edgar/OneDrive/Documentos/Bioinformática/Structure/FASSTRUCTURE/meanQ_data")
-tbl = read.table("K_10.10.meanQ")
-barplot(t(as.matrix(tbl)), col=rainbow(3),
-  xlab="Individual", ylab="Ancestry", border=NA,main="K=10")
+tbl1<-read.table("K_1.1.meanQ")
+attach(tbl1)
+k1<-barplot(t(as.matrix(tbl1)), col=rainbow(3),
+  xlab="Individual", ylab="Ancestry", border=NA,main="K=1")
+k1
 ```
  
 Como podemos observar para K= 10 no existen 10 grupos diferenciables. Esto es porque el algoritmo detecta un gran grupo genotípico y no existen diferencias a nivel de genoma entre los 5 grupos de muestreos.
 
 
 En el siguiente apartado veremos como hacer lo mismo con Admixture.
+```{r}
+setwd("C:/Users/edgar/OneDrive/Documentos/Bioinformática/Structure/FASSTRUCTURE/meanQ_data")
+tbl2 = read.table("K_2.2.meanQ")
+attach(tbl2)
+k2<-barplot(t(as.matrix(tbl2)), col=rainbow(3),
+  xlab="Individual", ylab="Ancestry", border=NA,main="K=2")
+k2
+```
+```{r}
+setwd("C:/Users/edgar/OneDrive/Documentos/Bioinformática/Structure/FASSTRUCTURE/meanQ_data")
+tbl3 = read.table("K_3.3.meanQ")
+attach(tbl3)
+k3<-barplot(t(as.matrix(tbl3)), col=rainbow(3),
+  xlab="Individual", ylab="Ancestry", border=NA,main="K=3")
+k3
 
-\pagebreak
+```
 
+```{r}
+setwd("C:/Users/edgar/OneDrive/Documentos/Bioinformática/Structure/FASSTRUCTURE/meanQ_data")
+tbl4 = read.table("K_4.4.meanQ")
+attach(tbl4)
+k4<-barplot(t(as.matrix(tbl4)), col=rainbow(3),
+  xlab="Individual", ylab="Ancestry", border=NA,main="K=4")
+k4
 
+```
+```{r}
+setwd("C:/Users/edgar/OneDrive/Documentos/Bioinformática/Structure/FASSTRUCTURE/meanQ_data")
+tbl5 = read.table("K_5.5.meanQ")
+attach(tbl5)
+k5<-barplot(t(as.matrix(tbl5)), col=rainbow(3),
+  xlab="Individual", ylab="Ancestry", border=NA,main="K=5")
+k5
+
+```
+
+```{r}
+library(ggplot2)
+library(ggpubr)
+ggarrange(k1, k2, k3, k4, k5,ncol= 1, nrow = 2)
+```
 
 
 ## Admixture
 
 [Admixture](https://dalexander.github.io/admixture/) es una alternativa similar a faststructure y una alrernativa para usar este software en caso de presentar dificultades con faststructure o STRUCTURE o para corroborar resultados. Para saber más sobre la documentación de [Admixture haga click aquí.](http://dalexander.github.io/admixture/admixture-manual.pdf)
 
-
 ```
-# ----------------Parameters---------------------- #                                                              
+# ----------------Parameters---------------------- #   
+
 #$ -S /bin/sh                                                                                                     
 #$ -pe mthread 30                                                                             
 #$ -q mThM.q                                                                                                      
@@ -651,7 +692,7 @@ ps4
 attach(ps3) #Attach the names of the columns without typing the dataframe using the "$"
 
 
-fst_2s_4b <- ggplot(data = ps4) + geom_point(aes(x= bpfake, y= `AMOVA Fst`)) + theme_classic() + ggtitle("2S27 vs  42b8") + xlab("") + theme(plot.title = element_text(hjust = 0.5))
+fst_2s_4b <- ggplot(data = ps4) + geom_point(aes(x= bpfake, y= `AMOVA Fst`), color= 'green') + theme_classic() + ggtitle("2S27 vs  42b8") + xlab("") + theme(plot.title = element_text(hjust = 0.5))
 fst_2s_4b
 
 
